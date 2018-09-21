@@ -1,45 +1,37 @@
 package amrelk.frc.ramsetetester;
 
+import jaci.pathfinder.Trajectory.Segment;
+
 public class RamseteFollower {
     private Pose2D currentPose = new Pose2D();
     private Pose2D targetPose = new Pose2D();
-    private double v, w;
+    private double v, w, k1, k3, e_x, e_y, e_theta, v_d, w_d;
     private final double
             b = 0.7,
             zeta = 0.7,
             k2 = b;
 
-    private double k1(double v_d, double w_d) {
-        return 2 * zeta * Math.sqrt(Math.pow(w_d, 2) + b * Math.pow(v_d, 2));
+
+    private void update(Segment seg, Pose2D currentPose) {
+        v_d = seg.velocity;
+        w_d = 0;
+        k1 = 2 * zeta * Math.sqrt(Math.pow(w_d, 2) + b * Math.pow(v_d, 2));
+        k3 = k1;
+        e_x = Math.cos(currentPose.theta) * (seg.x - currentPose.x) + Math.sin(currentPose.theta) * (seg.y - currentPose.y);
+        e_y = Math.cos(currentPose.theta) * (seg.y - currentPose.y) - Math.sin(currentPose.theta) * (seg.x - currentPose.x);
+        e_theta = seg.heading - currentPose.theta;
+        v = v_d * Math.cos(e_theta) + k1 * e_x;
+        w = w_d + k2 * sinE_thetaOverE_theta() * e_y + k3 * e_theta;
     }
 
-    private double k3(double v_d, double w_d) {
-        return k1(v_d, w_d);
+    private double sinE_thetaOverE_theta() {
+        if (e_theta < 0.0000001) {
+            return 1.0;
+        } else {
+            return Math.sin(e_theta)/e_theta;
+        }
     }
 
-    private double e_x() {
-        return Math.cos(currentPose.theta) * (targetPose.x - currentPose.x) + Math.sin(currentPose.theta) * (targetPose.y - currentPose.y);
-    }
-
-    private double e_y() {
-        return Math.cos(currentPose.theta) * (targetPose.y - currentPose.y) + Math.sin(currentPose.theta) * (targetPose.x - currentPose.x);
-    }
-
-    private double e_theta() {
-        return targetPose.theta - currentPose.theta;
-    }
-
-    private double v_d() {
-        return 0;
-    }
-
-    private double w_d() {
-        return 0;
-    }
-
-    public double v() {
-        return v_d() * Math.cos(e_theta()) + k1(v_d(), w_d()) * e_x();
-    }
 
 
 }
